@@ -42,9 +42,14 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState(null); 
+  const [openSignIn, setOpenSignIn] = useState(false);
+  const [username, setUsername] = useState(""); 
+
 
   const updateInventory = async () => {
-    const snapshot = query(collection(firestore, "inventory"));
+    if (!user) return; // Only update if user is signed in
+    const snapshot = query(collection(firestore, `inventory/${user}/items`));
     const docs = await getDocs(snapshot);
     const inventoryList = [];
     docs.forEach((doc) => {
@@ -52,13 +57,33 @@ export default function Home() {
     });
     setInventory(inventoryList);
   };
+  
+
+  const handleSignIn = async () => {
+    // Check if username exists or create a new user entry
+    const userRef = doc(firestore, "users", username);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      await setDoc(userRef, { username });
+    }
+    setUser(username);
+    handleCloseSignIn();
+    await updateInventory();
+  };
+  
+  const handleOpenSignIn = () => setOpenSignIn(true);
+  const handleCloseSignIn = () => setOpenSignIn(false);
+  
 
   useEffect(() => {
-    updateInventory();
-  }, []);
+    if (user) {
+      updateInventory();
+    }
+  }, [user]);
 
   const addItem = async (item) => {
-    const docRef = doc(collection(firestore, "inventory"), item);
+    if (!user) return;
+    const docRef = doc(collection(firestore, `inventory/${user}/items`), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const { quantity } = docSnap.data();
@@ -68,9 +93,10 @@ export default function Home() {
     }
     await updateInventory();
   };
-
+  
   const removeItem = async (item) => {
-    const docRef = doc(collection(firestore, "inventory"), item);
+    if (!user) return;
+    const docRef = doc(collection(firestore, `inventory/${user}/items`), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const { quantity } = docSnap.data();
@@ -82,6 +108,7 @@ export default function Home() {
     }
     await updateInventory();
   };
+  
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -104,19 +131,50 @@ export default function Home() {
       alignItems={"center"}
       gap={2}
     >
+      {/* Sign-In Modal */}
+      <Modal
+        open={openSignIn}
+        onClose={handleCloseSignIn}
+        aria-labelledby="modal-signin-title"
+        aria-describedby="modal-signin-description"
+      >
+        <Box sx={style}>
+          <Typography id="modal-signin-title" variant="h6" component="h2">
+            Sign In
+          </Typography>
+          <Stack width="100%" direction={"row"} spacing={2}>
+            <TextField
+              id="outlined-username"
+              label="Username"
+              variant="outlined"
+              fullWidth
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <Button
+              variant="outlined"
+              onClick={handleSignIn}
+            >
+              Sign In
+            </Button>
+          </Stack>
+        </Box>
+      </Modal>
+  
+      {/* Add Item Modal */}
       <Modal
         open={open}
         onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+        aria-labelledby="modal-add-item-title"
+        aria-describedby="modal-add-item-description"
       >
         <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
+          <Typography id="modal-add-item-title" variant="h6" component="h2">
             Add Item
           </Typography>
           <Stack width="100%" direction={"row"} spacing={2}>
             <TextField
-              id="outlined-basic"
+              id="outlined-item"
               label="Item"
               variant="outlined"
               fullWidth
@@ -136,65 +194,85 @@ export default function Home() {
           </Stack>
         </Box>
       </Modal>
-      <Button variant="contained" onClick={handleOpen}>
-        Add New Item
-      </Button>
-      <TextField
-        label="Search Items"
-        variant="outlined"
-        fullWidth
-        value={searchQuery}
-        onChange={handleSearchChange}
-        sx={{ mb: 2, width: "800px" }}
-      />
-      <Box border={"1px solid #333"}>
-        <Box
-          width="800px"
-          height="100px"
-          bgcolor={"#ADD8E6"}
-          display={"flex"}
-          justifyContent={"center"}
-          alignItems={"center"}
-        >
-          <Typography variant={"h2"} color={"#333"} textAlign={"center"}>
-            Inventory Items
-          </Typography>
+  
+      {/* Sign-In Button */}
+      {!user && (
+        <Button variant="contained" onClick={handleOpenSignIn}>
+          Sign In
+        </Button>
+      )}
+  
+      {/* Add New Item Button */}
+      {user && (
+        <Button variant="contained" onClick={handleOpen}>
+          Add New Item
+        </Button>
+      )}
+  
+      {/* Search Items */}
+      {user && (
+        <TextField
+          label="Search Items"
+          variant="outlined"
+          fullWidth
+          value={searchQuery}
+          onChange={handleSearchChange}
+          sx={{ mb: 2, width: "800px" }}
+        />
+      )}
+  
+      {/* Inventory List */}
+      {user && (
+        <Box border={"1px solid #333"}>
+          <Box
+            width="800px"
+            height="100px"
+            bgcolor={"#ADD8E6"}
+            display={"flex"}
+            justifyContent={"center"}
+            alignItems={"center"}
+          >
+            <Typography variant={"h2"} color={"#333"} textAlign={"center"}>
+              Inventory Items
+            </Typography>
+          </Box>
+          <Box width="800px" height="500px" overflow={"auto"} p={2}>
+            <Grid container spacing={2}>
+              {filteredInventory.map(({ name, quantity }) => (
+                <Grid item xs={12} sm={6} md={4} key={name}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h5" component="div">
+                        {name.charAt(0).toUpperCase() + name.slice(1)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Quantity: {quantity}
+                      </Typography>
+                      <Stack direction="row" spacing={1} mt={2}>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => addItem(name)}
+                        >
+                          Add
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={() => removeItem(name)}
+                        >
+                          Remove
+                        </Button>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         </Box>
-        <Box width="800px" height="500px" overflow={"auto"} p={2}>
-          <Grid container spacing={2}>
-            {filteredInventory.map(({ name, quantity }) => (
-              <Grid item xs={12} sm={6} md={4} key={name}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h5" component="div">
-                      {name.charAt(0).toUpperCase() + name.slice(1)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Quantity: {quantity}
-                    </Typography>
-                    <Stack direction="row" spacing={1} mt={2}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => addItem(name)}
-                      >
-                        Add
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => removeItem(name)}
-                      >
-                        Remove
-                      </Button>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-      </Box>
+      )}
     </Box>
   );
+  
 }
