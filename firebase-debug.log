@@ -1,0 +1,28 @@
+[debug] [2024-08-04T04:40:56.672Z] ----------------------------------------------------------------------
+[debug] [2024-08-04T04:40:56.674Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\User\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2024-08-04T04:40:56.674Z] CLI Version:   13.15.0
+[debug] [2024-08-04T04:40:56.674Z] Platform:      win32
+[debug] [2024-08-04T04:40:56.674Z] Node Version:  v20.11.1
+[debug] [2024-08-04T04:40:56.674Z] Time:          Sat Aug 03 2024 21:40:56 GMT-0700 (Pacific Daylight Time)
+[debug] [2024-08-04T04:40:56.674Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-08-04T04:40:56.679Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-08-04T04:40:56.679Z] > authorizing via signed-in user (vincentpham0104@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  G:\headstarter\pantry-tracker
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
